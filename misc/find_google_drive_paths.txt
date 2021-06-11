@@ -1,0 +1,4 @@
+user,drive_path
+Page Weil,G:/My Drive/
+RachelBash,G:/My Drive/
+awlostowski,C:/Users/awlostowski/Google Drive/
