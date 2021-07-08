@@ -71,6 +71,27 @@ key_gauge_flow <- gauges %>%
   distinct() %>%
   inner_join(rbind(col_flow, yam_flow), by = "gauge.id")
 
+df <- filter(key_gauge_flow, gauge.id == "09085000") %>%
+  mutate(year = year(date)) %>%
+  filter(year == 2002) %>%
+  rename(`Natural Flow` = flow.nat,
+         `Observed (managed) Flow` = flow.obs) %>%
+  select(date, `Natural Flow`, `Observed (managed) Flow`) %>%
+  pivot_longer(!date, names_to = "Classification", values_to = "flow") %>%
+  mutate(Classification = as.factor(Classification))
+  
+plot_example <- ggplot(df, aes(x = date, y = flow, col = Classification)) +
+  geom_line(size = 4) +
+  ylab("Flow (AF/month)") +
+  xlab("") +
+  theme_classic() +
+  theme(axis.text=element_text(size=12),
+          axis.title=element_text(size=14,face="bold")) +
+  theme(legend.position="top") +
+  theme(legend.text=element_text(size=12))
+
+print(plot_example)
+
 # American Whitewater hydrologic year type - based on Natural Flow estimates
 year_types <- key_gauge_flow %>%
   mutate(na.obs = is.na(flow.nat)) %>%
@@ -79,8 +100,8 @@ year_types <- key_gauge_flow %>%
   summarize(annual.sum = if_else(sum(na.obs)<2,sum(flow.nat),NA_real_)) %>%
   group_by(gauge.id) %>%
   mutate(year_class = case_when(annual.sum < quantile(annual.sum, 0.25) ~ "dry",
-                                annual.sum > quantile(annual.sum, 0.25) & annual.sum < quantile(annual.sum, 0.50) ~ "dry normal",
-                                annual.sum > quantile(annual.sum, 0.50) & annual.sum < quantile(annual.sum, 0.75) ~ "wet normal",
+                                annual.sum > quantile(annual.sum, 0.25) & annual.sum < quantile(annual.sum, 0.50) ~ "dry typical",
+                                annual.sum > quantile(annual.sum, 0.50) & annual.sum < quantile(annual.sum, 0.75) ~ "wet typical",
                                 annual.sum > quantile(annual.sum, 0.75) ~ "wet"))
 
 # Management impact - difference between natural and observed flows
@@ -89,14 +110,29 @@ impact <- key_gauge_flow %>%
   mutate(month = month(date)) %>%
   mutate(year = year(date)) %>%
   left_join(year_types, by = c("year", "gauge.id")) %>%
-  group_by(gauge.id, month, year_class) %>%
-  summarize(impact = mean(diff_prop, na.rm = T))
+  group_by(gauge.id, Gauge.name, month, year_class) %>%
+  summarize(impact = mean(diff_prop, na.rm = T)) %>%
+  mutate(name = case_when(gauge.id == "09081600" ~ "Crystal nr Redstone",
+                          gauge.id == "09085000" ~ "Roaring Fork nr Glenwood",
+                          gauge.id == "09239500" ~ "Yampa at Deerlodge",
+                          gauge.id == "09247600" ~ "Yampa at Steamboat",
+                          gauge.id == "09251000" ~ "Yampa blw Craig",
+                          gauge.id == "09260050" ~ "Yampa nr Maybell",)) %>%
+  rename(`Year Type` = year_class) %>%
+  mutate(year = 2000) %>%
+  mutate(Date = as.Date(paste0(year,"-",month,"-01")))
 
-p1 <- ggplot(impact, aes(x = month, y = impact * 100, col = year_class)) +
+p1 <- ggplot(impact, aes(x = Date, y = -impact * 100, col = `Year Type`)) +
   geom_line() +
   geom_hline(yintercept = 0) +
-  facet_wrap(~gauge.id) +
-  ylab("Management Impact, % of natural flow")
+  facet_wrap(~name, labeller = labeller(groupwrap = label_wrap_gen(10))) + 
+  ylab("Management Impact, % of natural flow") +
+  scale_x_date(date_labels = "%b") +
+  theme_classic() +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"),
+        strip.text.x = element_text(size = 12)) +
+  xlab("")
 
 print(p1)
                                 
