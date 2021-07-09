@@ -93,7 +93,7 @@ sim_tmp <- y_sim_flow_tidy %>%
   filter(node == y_crosswalk$Gage_ID[y_crosswalk$R_ID == "y1"]) %>%
   rename(sim_flow_af = af)
 return_tmp <- y_tot_return_tidy %>%
-  filter(node %in% y1$WDID)) %>%
+  filter(node %in% y1$WDID) %>%
   group_by(Date) %>%
   summarise(return_af = sum(af))
 supply_tmp <- y_tot_supply_tidy %>%
@@ -133,7 +133,7 @@ sim_tmp <- y_sim_flow_tidy %>%
   filter(node == y_crosswalk$Gage_ID[y_crosswalk$R_ID == "y2"]) %>%
   rename(sim_flow_af = af)
 return_tmp <- y_tot_return_tidy %>%
-  filter(node %in% y2$WDID)) %>%
+  filter(node %in% y2$WDID) %>%
   group_by(Date) %>%
   summarise(return_af = sum(af))
 supply_tmp <- y_tot_supply_tidy %>%
@@ -173,7 +173,7 @@ sim_tmp <- y_sim_flow_tidy %>%
   filter(node == y_crosswalk$Gage_ID[y_crosswalk$R_ID == "y3"]) %>%
   rename(sim_flow_af = af)
 return_tmp <- y_tot_return_tidy %>%
-  filter(node %in% y3$WDID)) %>%
+  filter(node %in% y3$WDID) %>%
   group_by(Date) %>%
   summarise(return_af = sum(af))
 supply_tmp <- y_tot_supply_tidy %>%
@@ -213,7 +213,7 @@ sim_tmp <- y_sim_flow_tidy %>%
   filter(node == y_crosswalk$Gage_ID[y_crosswalk$R_ID == "y4"]) %>%
   rename(sim_flow_af = af)
 return_tmp <- y_tot_return_tidy %>%
-  filter(node %in% y4$WDID)) %>%
+  filter(node %in% y4$WDID) %>%
   group_by(Date) %>%
   summarise(return_af = sum(af))
 supply_tmp <- y_tot_supply_tidy %>%
@@ -253,7 +253,7 @@ sim_tmp <- y_sim_flow_tidy %>%
   filter(node == y_crosswalk$Gage_ID[y_crosswalk$R_ID == "y5"]) %>%
   rename(sim_flow_af = af)
 return_tmp <- y_tot_return_tidy %>%
-  filter(node %in% y5$WDID)) %>%
+  filter(node %in% y5$WDID) %>%
   group_by(Date) %>%
   summarise(return_af = sum(af))
 supply_tmp <- y_tot_supply_tidy %>%
@@ -292,7 +292,8 @@ saveRDS(y4_wb_components, "./output/y4_wb_components.rds")
 saveRDS(y5_wb_components, "./output/y5_wb_components.rds")
 
 
-# Notes
+#notes
+
 
 #dstorage and res_evap are for the 12 reservoirs in the model
   
