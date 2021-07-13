@@ -314,8 +314,74 @@ y5_wb_components <- nat_tmp %>%
 
 # Next steps ==========================
 #impact: add supply and returns columns together then sum over the year then average across years
+supply_return <- y_tot_supply_tidy %>% 
+  rename(supply = af) %>% 
+  full_join(y_tot_return_tidy) %>%
+  rename(return = af) %>%
+  mutate(impact = supply - return)
+
+storage_evap <- y_dstorage_tidy %>%
+  rename(dstorage = af) %>%
+  full_join(y_res_evap_tidy, by = c("Date", "node")) %>%
+  rename(evap = af) %>%
+  mutate(impact = dstorage + evap)
+
+impact <- full_join(supply_return, storage_evap, by = c("Date", "node", "impact")) %>%
+  mutate(Date = paste0(Date, "-01"), Date = as.Date(Date), year = year(Date), month = month(Date)) %>%
+  filter(month > 4 & month < 10) %>%
+  group_by(node, year) %>%
+  summarise(tot_impact = sum(impact)) %>%
+  group_by(node) %>%
+  summarise(avg_tot_impact = mean(tot_impact))
 
 
+mapping_impact <- full_join(y5, impact, by = c("ID" = "node")) %>%
+  mutate(abs_impact = abs(avg_tot_impact), #make absolute column
+         sign = ifelse(avg_tot_impact > 0, 1, ifelse(avg_tot_impact == 0, 0, -1)))
+write.csv(mapping_impact, "./output/mapping_impact_all.csv", row.names = FALSE)
+
+# problems with importing csv into arcgis, so attempt to make it shp here
+# upload existing shp used to see projection info
+
+library(sf)
+yampa_nodes <- st_read("../data/Yampa Structures/At Deerlodge.shp")
+our_crs <- st_crs(yampa_nodes)
+mapping_impact_sf <- st_as_sf(mapping_impact, coords = c("UTMX", "UTMY"), crs = our_crs)
+st_write(mapping_impact_sf, "./output/mapping_impact_summer.shp")
+
+
+
+# get top 5 impacters
+y5_top5 <- mapping_impact_sf %>%
+  arrange(desc(avg_tot_impact)) %>%
+  slice_head(n=5) %>%
+  mutate(reach = "y1")
+y1_top5 <- mapping_impact_sf %>% filter(WDID %in% y1$WDID) %>%
+  arrange(desc(avg_tot_impact)) %>%
+  slice_head(n=5) %>%
+  mutate(reach = "y2")
+y2_top5 <- mapping_impact_sf %>% filter(WDID %in% y2$WDID) %>%
+  arrange(desc(avg_tot_impact)) %>%
+  slice_head(n=5) %>%
+  mutate(reach = "y3")
+y3_top5 <- mapping_impact_sf %>% filter(WDID %in% y3$WDID) %>%
+  arrange(desc(avg_tot_impact)) %>%
+  slice_head(n=5) %>%
+  mutate(reach = "y4")
+y4_top5 <- mapping_impact_sf %>% filter(WDID %in% y4$WDID) %>%
+  arrange(desc(avg_tot_impact)) %>%
+  slice_head(n=5) %>%
+  mutate(reach = "y5")
+all_top5 <- rbind(y1_top5, y2_top5, y3_top5, y4_top5, y5_top5)
+write.csv(all_top5, "./output/all_top5.csv", row.names = FALSE)
+st_write(all_top5, "./output/all_top5.shp")
+
+#save as individual st's
+st_write(y1_top5, "./output/y1_top5.shp")
+st_write(y2_top5, "./output/y2_top5.shp")
+st_write(y3_top5, "./output/y3_top5.shp")
+st_write(y4_top5, "./output/y4_top5.shp")
+st_write(y5_top5, "./output/y5_top5.shp")
 
 # save RDS files =============================
 saveRDS(y1_wb_components, "./output/y1_wb_components.rds")
@@ -323,6 +389,14 @@ saveRDS(y2_wb_components, "./output/y2_wb_components.rds")
 saveRDS(y3_wb_components, "./output/y3_wb_components.rds")
 saveRDS(y4_wb_components, "./output/y4_wb_components.rds")
 saveRDS(y5_wb_components, "./output/y5_wb_components.rds")
+
+
+
+
+
+
+
+
 
 
 
